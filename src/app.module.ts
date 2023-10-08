@@ -6,16 +6,23 @@ import { PushNotificationModule } from './push-notification/push-notification.mo
 
 // include SocketModule
 import { SocketModule } from './socket/socket.module'; // Import your SocketModule
-import { UserController } from './modules/user/user.controller';
-import { UserService } from './modules/user/user.service';
 import { UserModule } from './modules/user/user.module';
-import { GoogleAuthModule } from './google-auth/google-auth.module';
-import { GoogleAuthController } from './google-auth/google-auth.controller';
-import { RedisCacheModule } from './redis/redis.module';
+import { GoogleAuthModule } from './modules/auth/google-auth/google-auth.module';
+import { GoogleAuthController } from './modules/auth/google-auth/google-auth.controller';
+import { RedisCacheModule } from './database/redis/redis.module';
+import { PostgresProvider } from './database/postgres/postgres.provider';
+import { AuthModule } from './modules/auth/auth.module';
+import { JwtModule } from '@nestjs/jwt';
+import { JwtStrategy } from './modules/auth/jwt/jwt.strategy';
+import { JwtConfigModule } from './modules/auth/jwt/jwt.module';
+import { HttpHelper } from './helper/http.helper';
+import { AppRunner } from './app.runner';
+import { ScheduleModule } from '@nestjs/schedule';
+import { SchedulerService } from './scheduler/scheduler.service';
 
 @Module({
-  imports: [ConfigModule.forRoot(), PushNotificationModule, SocketModule, RedisCacheModule, UserModule, GoogleAuthModule], // Import other modules here
-  controllers: [AppController, UserController, GoogleAuthController], // Include controllers here
-  providers: [AppService, UserService], // Include providers here
+  imports: [ConfigModule.forRoot(), PushNotificationModule, ScheduleModule.forRoot(), JwtConfigModule, AuthModule, UserModule], // Import other modules here
+  controllers: [AppController], // Include controllers here
+  providers: [AppService, AppRunner, SchedulerService], // Include providers here
 })
 export class AppModule { }

@@ -2,9 +2,9 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 
 @Injectable()
 export class AbstractRepository {
-  constructor(private provider: any, private table: string) {}
+  constructor(protected provider: any, protected table: string) {}
 
-  private mapDataObjectValues(dataObject: object): object {
+  protected mapDataObjectValues(dataObject: object): object {
     let columns: any[] = [];
     let insertClauses: any[] = [];
     let insertedValue: any[] = [];
@@ -33,53 +33,14 @@ export class AbstractRepository {
     return result.rows;
   }
 
-  async getById(id: number): Promise<any> {
+  async create(data: object): Promise<any> {
     try {
-      const query: string = `SELECT * FROM ${this.table} WHERE id=$1`;
-      const result: any = await this.provider.query(query, [id]);
+      const mapObject: any = this.mapDataObjectValues(data);
+      const query: string = `INSERT INTO ${this.table} (${mapObject.columns.join(', ')}) VALUES (${mapObject.insertClauses.join(
+        ', ',
+      )}) RETURNING *`;
+      const result: any = await this.provider.query(query, mapObject.insertedValue);
       return result.rows[0];
-    } catch (error) {
-      throw new Error(error);
-    }
-  }
-
-  async getByEmail(email: string): Promise<any> {
-    try {
-      const query: string = `SELECT * FROM ${this.table} WHERE email=$1`;
-      const result: any = await this.provider.query(query, [email]);
-      return result.rows;
-    } catch (error) {
-      throw new Error(error);
-    }
-  }
-
-  async create(data: any): Promise<any> {
-    try {
-      const mapObject: any = this.mapDataObjectValues(data);
-      const query: string = `INSERT INTO ${this.table} (${mapObject.columns.join(', ')}) VALUES (${mapObject.insertClauses.join(', ')})`;
-      const result: any = await this.provider.query(query, mapObject.insertedValue);
-
-      return result;
-    } catch (error) {
-      throw new Error(error);
-    }
-  }
-
-  async updateById(id: number, data: any): Promise<any> {
-    try {
-      const mapObject: any = this.mapDataObjectValues(data);
-      const query: string = `UPDATE ${this.table} SET ${mapObject.setClauses.join(', ')} WHERE id=${id}`;
-      const result: any = await this.provider.query(query, mapObject.insertedValue);
-
-      return result;
-    } catch (error) {
-      throw new Error(error);
-    }
-  }
-
-  async deleteById(id: number): Promise<any> {
-    try {
-      const query: string = `DELETE from ${this.table} WHERE id=${id}`;
     } catch (error) {
       throw new Error(error);
     }

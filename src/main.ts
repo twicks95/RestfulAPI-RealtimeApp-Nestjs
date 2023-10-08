@@ -2,12 +2,13 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import * as webPush from 'web-push';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Env variables
-  const port = process.env.APP_PORT || 3002
+  const port = process.env.APP_PORT || 3002;
 
   // Configure CORS options
   const corsOptions: CorsOptions = {
@@ -18,6 +19,9 @@ async function bootstrap() {
 
   // Enable CORS for your application
   app.enableCors(corsOptions);
+
+  // Apply the ValidationPipe globally to handle validation for all requests.
+  app.useGlobalPipes(new ValidationPipe());
 
   // Configure VAPID keys for web-push
   const vapidKeys = {
@@ -32,9 +36,9 @@ async function bootstrap() {
 
   await app.listen(port, () => {
     try {
-      console.log("Service running on port " + port)
+      console.log('Service running on port ' + port);
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
   });
 }

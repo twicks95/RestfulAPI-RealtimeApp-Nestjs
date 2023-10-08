@@ -1,40 +1,43 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, Res } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Res, UseGuards, BadRequestException } from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto } from './dto/create-user.dto'
-import { UpdateUserDto } from './dto/update-user.dto'
 import { Response } from 'express';
+import { AuthGuard } from '@nestjs/passport';
+import { HttpHelper } from 'src/helper/http.helper';
+import { UserUpdateDto } from './dto/user-update.dto';
 
 @Controller('users')
 export class UserController {
-    constructor(private readonly userService: UserService) { }
+  constructor(private readonly userService: UserService, private readonly httpHelper: HttpHelper) {}
 
-    @Get('test')
-    getData(@Res() res: Response) {
-        res.json({ message: "OK" })
+  @Get()
+  async getAllUsers(@Res() res: Response) {
+    const users: any = await this.userService.getAll();
+    return this.httpHelper.generateResponse(200, users, res);
+  }
+
+  @Get(':id')
+  @UseGuards(AuthGuard('jwt'))
+  async getUserById(@Param('id') id: number) {
+    return await this.userService.findById(id);
+  }
+
+  @Patch(':id')
+  async create(@Param('id') id: number, @Body() userUpdateDto: UserUpdateDto, @Res() res: Response): Promise<any> {
+    try {
+      const result: any = await this.userService.updateUser(id, userUpdateDto);
+      return this.httpHelper.generateResponse(201, result, res);
+    } catch (error) {
+      throw new BadRequestException(error.message);
     }
+  }
 
-    // @Get()
-    // async getAllUsers() {
-    //     return this.userService.getAllUsers()
-    // }
-
-    // @Get(':id')
-    // async getUserById(@Param('id') id: number) {
-    //     return this.userService.findUserById(id)
-    // }
-
-    // @Post()
-    // async createUser(@Body() createUserDto: CreateUserDto) {
-    //     return this.userService.createUser(createUserDto)
-    // }
-
-    // @Put(':id')
-    // async updateUser(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto) {
-    //     return this.userService.updateUser(id, updateUserDto);
-    // }
-
-    // @Delete(':id')
-    // async deleteUser(@Param('id') id: number) {
-    //     return this.userService.deleteUser(id)
-    // }
+  @Delete(':id')
+  async deleteUser(@Param('id') id: number) {
+    try {
+      const result: any = this.userService.deleteUser(id);
+      return result;
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
 }

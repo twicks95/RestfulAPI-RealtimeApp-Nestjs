@@ -1,53 +1,94 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PostgresProvider } from '../../database/postgres.provider'
+import { UserRepository } from './user.repository';
+import { PostgresProvider } from 'src/database/postgres/postgres.provider';
 
 @Injectable()
 export class UserService {
-    constructor(private readonly postgresProvider: PostgresProvider) { }
+  private userRepository: any;
+  constructor(private readonly postgresProvider: PostgresProvider) {
+    this.userRepository = new UserRepository(this.postgresProvider, 'users');
+  }
 
-    async getAll() {
-        const query = 'SELECT * FROM users'
-        return await this.postgresProvider.query(query);
+  async getAll(): Promise<any> {
+    const result = await this.userRepository.getAll();
+    return result.rows;
+  }
+
+  async findById(id: number): Promise<any> {
+    const result = await this.userRepository.getById(id);
+    return result;
+  }
+
+  async findByEmail(email: string): Promise<any> {
+    try {
+      const result: any = await this.userRepository.getByEmail(email);
+      console.log({blok: result})
+      if (result.length === 0) {
+        throw new NotFoundException('User not found or unregistered!');
+      }
+
+      return result[0];
+    } catch (error) {
+      throw new Error(error);
     }
+  }
 
-    // async findUserById(id: number): Promise<User | undefined> {
-    //     const options: FindOneOptions<User> = {
-    //         where: { id }, // Specify conditions to filter the record you want to retrieve
-    //         // select: ['id', 'username', 'email'], // Specify which columns to select
-    //         // relations: ['profile'], // Specify relations to eager load
-    //         order: {
-    //             created_at: 'DESC', // Order the result by the 'createdAt' column in descending order
-    //         },
-    //     }
-    //     return await this.userRepository.findOne(options);
-    // }
+  async createUser(userData: any): Promise<any> {
+    try {
+      const result: any = await this.userRepository.create({
+        ...userData,
+        created_at: new Date(Date.now()),
+        updated_at: new Date(Date.now()),
+      });
 
-    // async createUser(user: User): Promise<User> {
-    //     return await this.userRepository.save(user);
-    // }
+      return result;
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
 
-    // async updateUser(id: number, user: User): Promise<User> {
-    //     const userData = await this.findUserById(id)
-    //     if (!userData) {
-    //         throw new NotFoundException('User not found')
-    //     } else {
-    //         // Update user properties
-    //         return await this.userRepository.save(user);
-    //     }
-    // }
+  async updateUser(id: number, data: any): Promise<any> {
+    try {
+      await this.userRepository.updateById(id, {
+        ...data,
+        updated_at: new Date(Date.now()),
+      });
 
-    // async deleteUser(id: number): Promise<User> {
-    //     const userData = await this.findUserById(id)
-    //     if (!userData) {
-    //         throw new NotFoundException('User not found')
-    //     } else {
-    //         return await this.userRepository.remove(userData);
-    //     }
-    // }
+      return data;
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
 
-    // async findUserById(id: number): Promise<User | undefined> {
-    //     return await this.userRepository.findOne(id);
-    // }
+  async updateUserLoginTime(id: number, loginTime: Date): Promise<any> {
+    try {
+      await this.userRepository.updateById(id, {
+        logged_in: loginTime,
+      });
 
-    // Add more database operations as needed
+      return;
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  async deleteUser(id: number): Promise<any> {
+    const userData = await this.userRepository.getById(id);
+    if (!userData) {
+      throw new NotFoundException(`User id not found`);
+    } else {
+      try {
+        await this.userRepository.deleteById(id);
+        return userData;
+      } catch (error) {
+        throw new Error(error);
+      }
+    }
+  }
+
+  // async findUserById(id: number): Promise<User | undefined> {
+  //     return await this.userRepository.findOne(id);
+  // }
+
+  // Add more database operations as needed
 }
